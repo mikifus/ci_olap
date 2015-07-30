@@ -1,0 +1,3 @@
+[Project]
+Manager=KDevCustomBuildSystem
+Name=ci_olap.git
