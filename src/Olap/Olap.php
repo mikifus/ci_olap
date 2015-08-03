@@ -2,8 +2,6 @@
 /**
 * OLAP library
 */
-require 'vendor/autoload.php';
-
 namespace Olap;
 
 use \Olap\olap_query;
