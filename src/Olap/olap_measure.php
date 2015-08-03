@@ -1,0 +1,17 @@
+<?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+namespace Olap\olap_measure;
+
+class olap_measure
+{
+    function __construct( $cube, $data )
+    {
+        $this->cube = $cube;
+        $this->data = $data;
+    }
+    function first_field( $table = '' )
+    {
+        $prefix = !empty($table) ? $table . '.' : '';
+        return $prefix . $this->data;
+    }
+}
