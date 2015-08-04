@@ -4,7 +4,7 @@
 */
 namespace Olap;
 
-include_once 'Olap_query.php';
+include_once 'olap_query.php';
 
 if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
