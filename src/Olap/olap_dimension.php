@@ -66,15 +66,27 @@ class olap_dimension extends olap_measure
     {
         if( !is_array($this->data['hierarchy']) )
         {
-            return null;
+            return NULL;
         }
+        $preset = NULL;
         if( $this->preset )
         {
-            $next_level = reset( $this->data['hierarchy'] );
-            $dimension = $this->data['dimensions'][ $next_level ];
-            return new olap_dimension( $this->cube, $dimension );
+            $preset = $this->preset;
         }
         $next_level = reset( $this->data['hierarchy'] );
-        new olap_dimension( $this->cube, $this->cube->dimension( $next_level ) );
+        return new olap_dimension( $this->cube, $this->dimension( $next_level, $preset ) );
+    }
+    function dimension( $d, $preset_name )
+    {
+        if( !empty( $this->cube->dimensions[ $d ] ) )
+        {
+            return $this->cube->dimension( $d );
+        }
+        else if( $preset_name )
+        {
+            $pd = $this->data['dimensions'][ $d ];
+            $pd['preset'] = $preset_name;
+            return $pd;
+        }
     }
 }

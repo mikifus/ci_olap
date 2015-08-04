@@ -13,7 +13,6 @@ if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 * @param  string $query
 * @return array
 */
-namespace Olap\olap_query;
 
 class olap_query
 {
@@ -132,7 +131,7 @@ class olap_query
         foreach( $cube->dimensions() as $dimension )
         {
             $this->select  ( $dimension->fields( $t_fact ) );
-            $this->group_by( (array) $dimension->first_field( $t_fact ) );
+            $this->group_by( $dimension->fields( $t_fact ) );
         }
     }
     public function select_all( $cube )
@@ -140,15 +139,7 @@ class olap_query
         $t_fact = $this->prefix_fact.$cube->fact;
         
         $this->select( $cube->get_all_fields() );
-        $this->group_by( $cube->get_all_fields() );/*
-        
-        foreach( $cube->dimensions() as $dimension )
-        {
-            $this->select  ( $dimension->fields( $t_fact ) );
-            $this->group_by( (array) $dimension->first_field( $t_fact ) );
-        }
-        $this->select( $cube->measures_fields( $t_fact ) );
-        $this->group_by( $cube->measures_fields( $t_fact ) );*/
+        $this->group_by( $cube->get_all_fields() );
     }
     public function cut( $cube, $cut )
     {
