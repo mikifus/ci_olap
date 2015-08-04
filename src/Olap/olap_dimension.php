@@ -1,4 +1,7 @@
-<?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php
+namespace Olap;
+
+if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 class olap_dimension extends olap_measure
 {

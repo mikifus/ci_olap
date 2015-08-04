@@ -1,4 +1,11 @@
-<?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php
+namespace Olap;
+
+include_once 'olap_cube.php';
+include_once 'olap_measure.php';
+include_once 'olap_dimension.php';
+
+if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 /**
 * Like Cubes toolkit
 * 

@@ -1,6 +1,7 @@
-<?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php
+namespace Olap;
 
-namespace Olap\olap_cube;
+if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 class olap_cube
 {

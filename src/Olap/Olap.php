@@ -1,13 +1,12 @@
- <?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php
 /**
 * OLAP library
 */
 namespace Olap;
 
-use \Olap\olap_query;
-use \Olap\olap_cube;
-use \Olap\olap_measure;
-use \Olap\olap_dimension;
+include_once 'Olap_query.php';
+
+if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 class Olap
 {
