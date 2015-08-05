@@ -84,8 +84,8 @@ class olap_query
         }
         if( !empty($params['order']) )
         {
-            $orders = explode(',', $params['order']);
-             $params['order'] = array();
+            $orders = explode('|', $params['order']);
+            $params['order'] = array();
             foreach( $orders as $order_data )
             {
                 $od = explode(':', $order_data);
@@ -128,16 +128,17 @@ class olap_query
             $select[] = "sum(".$m->first_field($t_fact).") as ".$m->first_field()."_sum";
         }
         $this->select( $select );
-        foreach( $cube->dimensions() as $dimension )
-        {
-            $this->select  ( $dimension->fields( $t_fact ) );
-            $this->group_by( $dimension->fields( $t_fact ) );
-        }
+//         foreach( $cube->dimensions() as $dimension )
+//         {
+//             $this->select  ( $dimension->fields( $t_fact ) );
+//             $this->group_by( $dimension->fields( $t_fact ) );
+//         }
+//         $this->select( $cube->get_all_fields() );
+//         $this->group_by( $cube->get_all_fields() );
     }
     public function select_all( $cube )
     {
         $t_fact = $this->prefix_fact.$cube->fact;
-        
         $this->select( $cube->get_all_fields() );
         $this->group_by( $cube->get_all_fields() );
     }
@@ -153,8 +154,9 @@ class olap_query
                 $h = $dimension->hierarchy();
                 if( empty($h) )
                 {
-                    continue;
+                    $h = array( $dimension );
                 }
+                $last_field = $dimension->first_field( $t_fact );
                 foreach( $cp['path'] as $c => $step )
                 {
                     if( empty($step) )
@@ -162,10 +164,14 @@ class olap_query
                         continue;
                     }
                     $level = $h[ $c ];
-                    $where_ins[] = array( $level->first_field( $t_fact ), $step );
+                    $last_field = $level->first_field( $t_fact );
+                    $where_ins[] = array( $last_field, $step );
                 }
                 // We can keep the last field of the hierarchy to group by
-                $group_bys[] = $level->first_field( $t_fact );
+                $group_bys[] = $last_field;
+                
+                // We add the cut as info to select
+                $this->select( (array) $last_field );
             }
             // It might be a measure to cut by!
             else if( $measure = $cube->measure( $cp['dimension'] ) )
@@ -186,17 +192,22 @@ class olap_query
             if( $dimension = $cube->dimension( $order['name'] ) )
             {
                 // It is a dimension
-                $order_bys[] =  $dimension->first_field( $t_fact ) . " " . $order['order'];
+                $field = $dimension->first_field( $t_fact );
+                $order_bys[] = $field . " " . $order['order'];
+                $this->group_by( (array)$field );
             }
             else if( $measure = $cube->measure( $order['name'] ) )
             {
-                $order_bys[] = $measure->first_field( $t_fact ) . " " . $order['order'];
+                $field = $measure->first_field( $t_fact );
+                $order_bys[] = $field . " " . $order['order'];
+                $this->group_by( (array)$field );
             }
             else
             {
                 foreach( $cube->order() as $cube_order )
                 {
                     $order_bys[] = $cube_order['name'] . " " . $cube_order['order'];
+                    $this->group_by( (array)$cube_order['name'] );
                 }
             }
         }
@@ -213,6 +224,21 @@ class olap_query
         );
     }
     public function result( $cube )
+    {
+        $this->compile_query( $cube );
+        // Get the data
+        $query = $this->db->get();
+        if( !$query )
+        {
+            return FALSE;
+        }
+        if ($query->num_rows() > 0)
+        {
+            return $query->result_array();
+        }
+        return array();
+    }
+    private function compile_query( $cube )
     {
         $t_fact = $this->prefix_fact.$cube->fact;
         
@@ -245,19 +271,14 @@ class olap_query
             $this->db->offset( $limit['offset'] );
             $this->db->limit( $limit['limit'] );
         }
-        
         $this->db->from( $t_fact );
-        // Get the data
-        $query = $this->db->get();
-        if( !$query )
-        {
-            return FALSE;
-        }
-        if ($query->num_rows() > 0)
-        {
-            return $query->result_array();
-        }
-        return array();
+    }
+    public function get_compiled_query( $cube )
+    {
+        $this->compile_query( $cube );
+        $r = $this->db->get_compiled_select();
+        $this->db->reset_query();
+        return $r;
     }
     public function procedure( $cube, $args )
     {

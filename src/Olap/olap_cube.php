@@ -9,7 +9,7 @@ class olap_cube
     private $dimensions = array();
     private $order;
     
-    function __construct( $data, $presets = array() )
+    function __construct( $data )
     {
         $this->fact = $data['fact'];
         foreach( $data['measures'] as $measure )
@@ -18,12 +18,6 @@ class olap_cube
         }
         foreach( $data['dimensions'] as $name => $dimension )
         {
-            if( is_string( $dimension ) && isset( $presets[ $dimension ] ) )
-            {
-                $d = new olap_dimension( $this, $presets[ $dimension ] );
-                $this->dimensions[ $dimension ] = $d;
-                continue;
-            }
             $this->dimensions[ $name ] = new olap_dimension( $this, $dimension );
         }
         $this->order = $data['order'];
@@ -63,10 +57,7 @@ class olap_cube
         $list = array();
         foreach( $this->{ $from } as $m )
         {
-            if( $field = $m->first_field() )
-            {
-                $list[] = $prefix . $field;
-            }
+            $list =  array_merge( $list, $m->fields($prefix) );
         }
         return $list;
     }
@@ -80,7 +71,12 @@ class olap_cube
         $result = array();
         foreach( $dimensions as $d )
         {
-            $result[] = $d->first_field();
+            $field = $d->insert_field();
+            if( in_array( $field, $result ) )
+            {
+                continue;
+            }
+            $result[] = $field;
         }
         return $result;
     }

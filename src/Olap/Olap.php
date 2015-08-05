@@ -106,14 +106,27 @@ class Olap
      */
     private function cube_info( $fact_name )
     {
+        $cube_info = array();
         foreach( $this->cubes as $c )
         {
             if( $c['fact'] == $fact_name )
             {
-                return $c;
+                $cube_info = $c;
+                break;
             }
         }
-        return array();
+        foreach( $cube_info['dimensions'] as $pos => $dimension )
+        {
+            if( is_string( $dimension ) && isset( $this->preset_dimensions[ $dimension ] ) )
+            {
+                unset( $cube_info['dimensions'][ $pos ] );
+                foreach( $this->preset_dimensions[ $dimension ] as $name => $preset )
+                {
+                    $cube_info['dimensions'][ $name ] = $preset;
+                }
+            }
+        }
+        return $cube_info;
     }
     
     public function get_cube( $fact_name )
@@ -122,7 +135,7 @@ class Olap
         return new olap_cube( $cube_info, $this->preset_dimensions );
     }
     
-    public function query( $query )
+    public function query( $query, $return = false )
     {
         $q      = new olap_query ( $this->db ) ;
         $query  = $q->parse( $query );
@@ -149,7 +162,10 @@ class Olap
                 $q->order( $cube, $query['params']['order'] );
             }
             $q->limit( $query['params']['limit'] );
-            
+            if( $return )
+            {
+                return $q->get_compiled_query( $cube );
+            }
             $result = $q->result( $cube );
             // WARNING: DEBUG
             $this->last_query = $this->db->last_query();

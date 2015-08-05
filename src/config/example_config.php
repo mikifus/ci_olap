@@ -34,12 +34,24 @@ $config['cubes'] = array(
 */
 $config['preset_dimensions'] = array(
     'time' => array(
+        'year' => array(
+            'fields'    => array('year'),
+            'unified_field' => 'time',
+            'hierarchy' => array('month')
+        ),
+        'month' => array(
+            'fields'    => array('month'),
+            'unified_field' => 'time',
+            'hierarchy' => array('day')
+        ),
+        'day' => array(
+            'fields'    => array('day'),
+            'unified_field' => 'time',
+            'hierarchy' => array('hour')
+        ),
         'hour' => array(
-            'day' => array(
-                'month' => array(
-                    'year'
-                )
-            )
+            'fields'    => array('hour'),
+            'unified_field' => 'time',
         )
     )
 );

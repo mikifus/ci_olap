@@ -15,24 +15,10 @@ class olap_dimension extends olap_measure
     function fields( $table = '' )
     {
         $prefix = !empty($table) ? $table . '.' : '';
-        $fields = array();
-        if( $this->preset )
-        {
-            foreach( $this->data['dimensions'] as $key => $subd )
-            {
-                if( !empty($subd['fields']) )
-                {
-                    $fields = array_merge($fields, $subd['fields']);
-                }
-            }
-        }
         $result = array();
-        if( !empty( $fields ) )
+        foreach( $this->data['fields'] as $f )
         {
-            foreach( $fields as $f )
-            {
-                $result[] = $prefix . $f;
-            }
+            $result[] = $prefix . $f;
         }
         return $result;
     }
@@ -45,14 +31,22 @@ class olap_dimension extends olap_measure
         }
         return $prefix . reset( $this->data['fields'] );
     }
+    function insert_field( $table = '' )
+    {
+        $prefix = !empty($table) ? $table . '.' : '';
+        if( isset( $this->data['unified_field'] ) )
+        {
+            return $prefix . $this->data['unified_field'];
+        }
+        return $this->first_field( $table );
+    }
     function hierarchy()
     {
-        $list = array();
+        $list = array( $this ); // The first (zero) position refers to itself
         $current = $this->hierarchy_down();
-        if( empty($current) )
+        if( is_null($current) )
         {
-            // It returns itself in the list
-            return array( $this );
+            return array();
         }
         $list[] = $current;
         while( $next = $current->hierarchy_down() )
@@ -69,24 +63,7 @@ class olap_dimension extends olap_measure
             return NULL;
         }
         $preset = NULL;
-        if( $this->preset )
-        {
-            $preset = $this->preset;
-        }
         $next_level = reset( $this->data['hierarchy'] );
-        return new olap_dimension( $this->cube, $this->dimension( $next_level, $preset ) );
-    }
-    function dimension( $d, $preset_name )
-    {
-        if( !empty( $this->cube->dimensions[ $d ] ) )
-        {
-            return $this->cube->dimension( $d );
-        }
-        else if( $preset_name )
-        {
-            $pd = $this->data['dimensions'][ $d ];
-            $pd['preset'] = $preset_name;
-            return $pd;
-        }
+        return $this->cube->dimension( $next_level );
     }
 }

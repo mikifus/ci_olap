@@ -15,4 +15,8 @@ class olap_measure
         $prefix = !empty($table) ? $table . '.' : '';
         return $prefix . $this->data;
     }
+    function fields( $table = '' )
+    {
+        return (array) $this->first_field( $table );
+    }
 }
