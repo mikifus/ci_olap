@@ -47,6 +47,7 @@ class Olap
             $this->prefix           = $config['db_tables_prefix'];
             $this->prefix_fact      = $config['prefix_fact'];
             $this->prefix_dimension = $config['prefix_dimension'];
+            $this->prefix_view      = $config['prefix_view'];
             $this->preset_dimensions = $config['preset_dimensions'];
             $this->default_pagesize = $config['default_pagesize'];
         }
@@ -104,14 +105,21 @@ class Olap
      * @param  string $fact_name
      * @return array
      */
-    private function cube_info( $fact_name )
+    private function cube_info( $view_name )
     {
         $cube_info = array();
         foreach( $this->cubes as $c )
         {
-            if( $c['fact'] == $fact_name )
+            if( $c['fact'] == $view_name )
             {
                 $cube_info = $c;
+                $cube_info['view'] = $this->prefix_fact . $view_name;
+                break;
+            }
+            else if( in_array( $view_name, $c['views'] ) )
+            {
+                $cube_info = $c;
+                $cube_info['view'] = $this->prefix_view . $view_name;
                 break;
             }
         }
@@ -129,9 +137,9 @@ class Olap
         return $cube_info;
     }
     
-    public function get_cube( $fact_name )
+    public function get_cube( $view_name )
     {
-        $cube_info = $this->cube_info( $fact_name );
+        $cube_info = $this->cube_info( $view_name );
         return new olap_cube( $cube_info, $this->preset_dimensions );
     }
     
@@ -140,7 +148,7 @@ class Olap
         $q      = new olap_query ( $this->db ) ;
         $query  = $q->parse( $query );
         
-        $cube   = $this->get_cube( $query['fact'] );
+        $cube   = $this->get_cube( $query['view'] );
         
         $result = array();
         if( !empty($cube) )
@@ -149,6 +157,9 @@ class Olap
             {
                 case 'aggregate':
                     $q->aggregate( $cube );
+                break;
+                case 'count':
+                    $q->count( $cube, $query['params']['count'] );
                 break;
                 default:
                     $q->select_all( $cube );

@@ -66,7 +66,7 @@ class olap_query
         $parts  = explode( '/', $divide[0]);
         parse_str( $divide[1], $params );
         
-        $fact   = array_shift( $parts );
+        $view   = array_shift( $parts );
         $action = array_shift( $parts );
         
         if( !empty($params['cut']) )
@@ -91,7 +91,8 @@ class olap_query
                 $od = explode(':', $order_data);
                 if( empty($od[1]) )
                 {
-                    $od[1] = 'asc';
+                    // DESC is default for pagination to the past
+                    $od[1] = 'desc';
                 }
                 $params['order'][] = array('name' => $od[0], 'order' => strtoupper( $od[1] ) );
             }
@@ -111,14 +112,14 @@ class olap_query
         $params['limit'] = $limit;
         
         return array(
-            'fact'    => $fact,
+            'view'    => $view,
             'action'  => $action,
             'params'  => $params
         );
     }
     public function aggregate( $cube )
     {
-        $t_fact = $this->prefix_fact.$cube->fact;
+        $t_fact = $cube->current_view();
         $select = array();
         // COUNT
         $select[] = "count(".$t_fact.") as ".$cube->fact()."_count";
@@ -128,23 +129,26 @@ class olap_query
             $select[] = "sum(".$m->first_field($t_fact).") as ".$m->first_field()."_sum";
         }
         $this->select( $select );
-//         foreach( $cube->dimensions() as $dimension )
-//         {
-//             $this->select  ( $dimension->fields( $t_fact ) );
-//             $this->group_by( $dimension->fields( $t_fact ) );
-//         }
-//         $this->select( $cube->get_all_fields() );
-//         $this->group_by( $cube->get_all_fields() );
+    }
+    public function count( $cube, $fields )
+    {
+        $t_fact = $cube->current_view();
+        $fields = explode('|',$fields);
+        foreach( $fields as $fld )
+        {
+            $select = array("count(".$t_fact.".".$fld.") as ".$fld."_count");
+            $this->select( $select );
+        }
     }
     public function select_all( $cube )
     {
-        $t_fact = $this->prefix_fact.$cube->fact;
+        $t_fact = $cube->current_view();
         $this->select( $cube->get_all_fields() );
         $this->group_by( $cube->get_all_fields() );
     }
     public function cut( $cube, $cut )
     {
-        $t_fact = $this->prefix_fact.$cube->fact;
+        $t_fact = $cube->current_view();
         $group_bys = array();
         $where_ins = array();
         foreach( $cut as $cp )
@@ -185,7 +189,7 @@ class olap_query
     }
     public function order( $cube, $order_param )
     {
-        $t_fact = $this->prefix_fact.$cube->fact;
+        $t_fact = $cube->current_view();
         $order_bys = array();
         foreach( $order_param as $order )
         {
@@ -240,7 +244,7 @@ class olap_query
     }
     private function compile_query( $cube )
     {
-        $t_fact = $this->prefix_fact.$cube->fact;
+        $t_fact = $cube->current_view();
         
         extract( $this->sql_params );
         
@@ -289,7 +293,7 @@ class olap_query
             log_message('debug', 'Olap: Data compilation failed (wrong parameters).');
             throw new Exception("Olap: Data compilation failed (wrong parameters).");
         }
-        $procedure_name = $cube->fact( $this->prefix_fact );
+        $procedure_name = $cube->current_view();
         $procedure = $this->make_procedure( $procedure_name, $args );
         return $this->db->query('SELECT '.$procedure.";", $args);
     }

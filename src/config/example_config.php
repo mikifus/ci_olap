@@ -13,6 +13,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $config['cubes'] = array(
     array(
         'fact' => 'sale',
+        'views' => array( 'sale_product' ),
         'measures' => array( 'price' ),
         'dimensions' => array(
                 'shop'    => array('id_shop'),

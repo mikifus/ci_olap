@@ -7,11 +7,15 @@ class olap_cube
 {
     private $measures = array();
     private $dimensions = array();
+    private $views = array();
     private $order;
+    private $current_view = '';
     
     function __construct( $data )
     {
-        $this->fact = $data['fact'];
+        $this->fact  = $data['fact'];
+        $this->views = $data['views'];
+        $this->set_view( $data['view'] );
         foreach( $data['measures'] as $measure )
         {
             $this->measures[ $measure ] = new olap_measure( $this, $measure );
@@ -21,6 +25,14 @@ class olap_cube
             $this->dimensions[ $name ] = new olap_dimension( $this, $dimension );
         }
         $this->order = $data['order'];
+    }
+    function set_view( $view_name )
+    {
+        $this->current_view = $view_name;
+    }
+    function current_view()
+    {
+        return $this->current_view;
     }
     function fact( $prefix = '' )
     {
