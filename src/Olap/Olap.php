@@ -116,12 +116,16 @@ class Olap
                 $cube_info['view'] = $this->prefix_fact . $view_name;
                 break;
             }
-            else if( in_array( $view_name, $c['views'] ) )
+            else if( isset($c['views']) && in_array( $view_name, $c['views'] ) )
             {
                 $cube_info = $c;
                 $cube_info['view'] = $this->prefix_view . $view_name;
                 break;
             }
+        }
+        if( empty($cube_info) )
+        {
+            throw new Exception("Olap library: No cube found.");
         }
         foreach( $cube_info['dimensions'] as $pos => $dimension )
         {

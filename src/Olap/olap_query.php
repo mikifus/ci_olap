@@ -76,9 +76,10 @@ class olap_query
             foreach( $cut_params as $cp )
             {
                 $cp   = explode(':', $cp);
+                $path = isset($cp[1]) ? explode(',', $cp[1]) : array();
                 $params['cut'][] = array(
                     'dimension' => $cp[0],
-                    'path'      => explode(',', $cp[1])
+                    'path'      => $path
                 );
             }
         }
@@ -178,9 +179,14 @@ class olap_query
                 $this->select( (array) $last_field );
             }
             // It might be a measure to cut by!
-            else if( $measure = $cube->measure( $cp['dimension'] ) )
+            else if( $measure = $cube->measure( $cp['dimension'] ) && !empty($cp['path']) )
             {
                 $where_ins[] = array( $measure->first_field( $t_fact ), $cp['path'] );
+            }
+            else if( $measure = $cube->measure( $cp['dimension'] ) )
+            {
+                $select[] = $this->select( (array) $measure->first_field( $t_fact ) );
+                $group_bys[] = $measure->first_field( $t_fact );
             }
         }
         
