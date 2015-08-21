@@ -4,7 +4,18 @@
 */
 namespace Olap;
 
-include_once 'olap_query.php';
+use \Olap\Object\olap_query;
+use \Olap\Object\olap_cube;
+use \Olap\Object\olap_measure;
+use \Olap\Object\olap_dimension;
+use \Olap\Object\olap_query_parser;
+
+require 'Object/olap_query.php';
+require 'Object/olap_cube.php';
+require 'Object/olap_measure.php';
+require 'Object/olap_dimension.php';
+require 'Object/olap_query_parser.php';
+
 
 if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
@@ -95,7 +106,7 @@ class Olap
     private function _add( $fact_name, $args )
     {
         $cube   = $this->get_cube( $fact_name );
-        $q      = new olap_query ( $this->db ) ;
+        $q      = new \olap_query ( $this->db ) ;
         return $q->procedure( $cube, $args );
     }
 
@@ -125,7 +136,7 @@ class Olap
         }
         if( empty($cube_info) )
         {
-            throw new Exception("Olap library: No cube found.");
+            throw new Exception("Olap library: Cube not found.");
         }
         foreach( $cube_info['dimensions'] as $pos => $dimension )
         {
@@ -140,55 +151,73 @@ class Olap
         }
         return $cube_info;
     }
-    
+    /**
+     * Returns the cube specified by a view
+     * @param string $view_name
+     * @return olap_cube
+     */
     public function get_cube( $view_name )
     {
         $cube_info = $this->cube_info( $view_name );
         return new olap_cube( $cube_info, $this->preset_dimensions );
     }
-    
-    public function query( $query, $return = false )
+    /**
+     * Main method of the library.
+     * It processes a query string and returns
+     * the resulting data.
+     * 
+     * @param string $query
+     * @return string|array
+     */
+    public function query( $query )
     {
-        $q      = new olap_query ( $this->db ) ;
-        $query  = $q->parse( $query );
-        
-        $cube   = $this->get_cube( $query['view'] );
-        
         $result = array();
-        if( !empty($cube) )
+        $q = $this->build_query( $query );
+        $result = $q->result();
+        
+        // WARNING: DEBUG
+        $this->last_query = $this->db->last_query();
+        
+        if( $result === FALSE )
         {
-            switch ( $query['action'] )
-            {
-                case 'aggregate':
-                    $q->aggregate( $cube );
-                break;
-                case 'count':
-                    $q->count( $cube, $query['params']['count'] );
-                break;
-                default:
-                    $q->select_all( $cube );
-            }
-            if( !empty( $query['params']['cut'] ) )
-            {
-                $q->cut( $cube, $query['params']['cut'] );
-            }
-            if( !empty( $query['params']['order'] ) )
-            {
-                $q->order( $cube, $query['params']['order'] );
-            }
-            $q->limit( $query['params']['limit'] );
-            if( $return )
-            {
-                return $q->get_compiled_query( $cube );
-            }
-            $result = $q->result( $cube );
-            // WARNING: DEBUG
-            $this->last_query = $this->db->last_query();
-            if( $result === FALSE )
-            {
-                throw new Exception("Olap library: The database query failed!");
-            }
+            throw new Exception("Olap library: The database query failed!");
         }
         return $result;
+    }
+    
+    /**
+     * Builds, compiles the database query and returns it as
+     * a string.
+     * FOr debugging purposes.
+     * 
+     * @param string $query
+     * @return string
+     */
+    public function get_database_query( $query )
+    {
+        $q = $this->build_query( $query );
+        return $q->get_compiled_query();
+    }
+    
+    /**
+     * Builds an olap query object from a query string.
+     * 
+     * @param string $query
+     * @return \Olap\Object\olap_query
+     */
+    private function build_query( $query )
+    {
+        $parser = new olap_query_parser;
+        $q      = new olap_query( $this->db ) ;
+        $q_data = $parser->parse( $query );
+        $cube   = $this->get_cube( $q_data['view'] );
+        if( empty($cube) )
+        {
+            throw new Exception("Olap library: Failed to build query.");
+        }
+        $q->set_cube( $cube );
+        $q->build( $q_data );
+        
+        return $q;
     }
 }
