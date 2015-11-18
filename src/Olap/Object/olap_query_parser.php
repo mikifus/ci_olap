@@ -45,6 +45,10 @@ class olap_query_parser
         
         $parameters = array();
         
+        if( !empty($params['select']) )
+        {
+            $parameters['select'] = $this->parse_select( $params['select'] );
+        }
         if( !empty($params['cut']) )
         {
             $parameters['cut'] = $this->parse_cut( $params['cut'] );
@@ -65,6 +69,16 @@ class olap_query_parser
             'action'  => $action,
             'params'  => $parameters
         );
+    }
+    /**
+     * Select parameter parsing
+     * @param array $sel_data
+     * @return array
+     */
+    private function parse_select( $sel_data )
+    {
+        $sel_params = explode('|', $sel_data);
+        return $sel_params;
     }
     /**
      * Cut parameter parsing

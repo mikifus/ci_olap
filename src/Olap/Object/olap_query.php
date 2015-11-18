@@ -74,6 +74,11 @@ class olap_query
                 $this->select_all();
             break;
         }
+        if( !empty( $query_data['params']['select'] ) )
+        {
+            $this->select( $query_data['params']['select'] );
+            $this->group_by( $query_data['params']['select'] );
+        }
         if( !empty( $query_data['params']['cut'] ) )
         {
             $this->cut( $query_data['params']['cut'] );
