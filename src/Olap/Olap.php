@@ -136,7 +136,7 @@ class Olap
         }
         if( empty($cube_info) )
         {
-            throw new Exception("Olap library: Cube not found.");
+            throw new xception("Olap library: Cube not found.");
         }
         foreach( $cube_info['dimensions'] as $pos => $dimension )
         {
@@ -180,7 +180,7 @@ class Olap
         
         if( $result === FALSE )
         {
-            throw new Exception("Olap library: The database query failed!");
+            throw new xception("Olap library: The database query failed!");
         }
         return $result;
     }
@@ -213,7 +213,7 @@ class Olap
         $cube   = $this->get_cube( $q_data['view'] );
         if( empty($cube) )
         {
-            throw new Exception("Olap library: Failed to build query.");
+            throw new xception("Olap library: Failed to build query.");
         }
         $q->set_cube( $cube );
         $q->build( $q_data );
