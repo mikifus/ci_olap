@@ -19,6 +19,7 @@ class olap_query
     private $sql_params = array(
                 'select' => array(),
                 'where_in' => array(),
+                'where_in_groups' => array(),
                 'group_by' => array(),
                 'order_by' => array()
             );
@@ -117,6 +118,10 @@ class olap_query
     {
         $this->_merge_sql_param( __FUNCTION__, $info );
     }
+    private function where_in_groups( $info )
+    {
+        $this->_merge_sql_param( __FUNCTION__, $info );
+    }
     private function group_by( $info )
     {
         $this->_merge_sql_param( __FUNCTION__, $info );
@@ -185,12 +190,14 @@ class olap_query
         $cube = $this->cube;
         $t_fact = $cube->current_view();
         $group_bys = array();
+        $where_in_groups = array();
         $where_ins = array();
-        foreach( $cut as $cp )
+        foreach( $cut as $reference => $cp )
         {
             if( $dimension = $cube->dimension( $cp['dimension'] ) )
             {
                 $h = $dimension->hierarchy();
+                $where_in_groups[ $reference ] = array();
                 if( empty($h) )
                 {
                     $h = array( $dimension );
@@ -202,12 +209,12 @@ class olap_query
                     {
                         continue;
                     }
-                    $level = $h[ $c ];
+                    $level = $h[ $step['name'] ];
                     $current_field = $level->first_field( $t_fact );
-                    $where_ins[] = array( $current_field, $step );
+                    $where_in_groups[ $reference ][] = array( $current_field, $step['values'] );
                 }
                 // We can keep the last field of the hierarchy to group by
-                $group_bys[] = $last_field;
+                $group_bys[$last_field] = $last_field;
                 
                 // We add the cut as info to select
                 $this->select( (array) $last_field );
@@ -219,11 +226,13 @@ class olap_query
             }
             else if( $measure = $cube->measure( $cp['dimension'] ) )
             {
-                $select[] = $this->select( (array) $measure->first_field( $t_fact ) );
-                $group_bys[] = $measure->first_field( $t_fact );
+                $field = $measure->first_field( $t_fact );
+                $select[] = $this->select( (array) $field );
+                $group_bys[$field] = $field;
             }
         }
         
+        $this->where_in_groups( $where_in_groups );
         $this->where_in( $where_ins );
         $this->group_by( $group_bys );
     }
@@ -318,6 +327,10 @@ class olap_query
         {
             $this->compile_select( $select );
         }
+        if( !empty($where_in_groups) )
+        {
+            $this->compile_where_in_groups( $where_in_groups );
+        }
         if( !empty($where_in) )
         {
             $this->compile_where_in( $where_in );
@@ -341,6 +354,7 @@ class olap_query
      * 
      * @method compile_select
      * @method compile_where_in
+     * @method compile_where_in_groups
      * @method compile_group_by
      * @method compile_order_by
      * @method compile_limit
@@ -360,6 +374,31 @@ class olap_query
         {
             $this->db->where_in( $wi[0], $wi[1] );
         }
+    }
+    private function compile_where_in_groups( $data )
+    {
+        $or_groups = array();
+        foreach( $data as $name => $wig )
+        {
+            if( count($wig) == 1 )
+            {
+                $this->compile_where_in( $wig );
+            }
+            else
+            {
+                $or_groups[] = $wig;
+            }
+        }
+        $this->db->group_start();
+        foreach($or_groups as $wig) {
+            $this->db->or_group_start();
+            foreach( $wig as $wi )
+            {
+                $this->db->where_in( $wi[0], $wi[1] );
+            }
+            $this->db->group_end();
+        }
+        $this->db->group_end();
     }
     private function compile_group_by( $data )
     {

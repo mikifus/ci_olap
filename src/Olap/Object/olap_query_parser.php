@@ -92,10 +92,11 @@ class olap_query_parser
         foreach( $cut_params as $cp )
         {
             $cp   = explode(':', $cp);
-            $path = isset($cp[1]) ? explode(',', $cp[1]) : array();
-            foreach( $path as $step => $values )
+            $path_data = isset($cp[1]) ? explode(',', $cp[1]) : array();
+            $path = array();
+            foreach( $path_data as $step => $values )
             {
-                $path[ $step ] = explode( '$', $values );
+                $path[] = array('name'=>$step, 'values'=>explode( '$', $values ));
             }
             $cut[] = array(
                 'dimension' => $cp[0],
