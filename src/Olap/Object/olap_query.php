@@ -20,6 +20,7 @@ class olap_query
                 'select' => array(),
                 'where_in' => array(),
                 'where_in_groups' => array(),
+                'where_dates' => array(),
                 'group_by' => array(),
                 'order_by' => array()
             );
@@ -83,6 +84,10 @@ class olap_query
         if( !empty( $query_data['params']['cut'] ) )
         {
             $this->cut( $query_data['params']['cut'] );
+        }
+        if( !empty( $query_data['params']['date'] ) )
+        {
+            $this->where_date( $query_data['params']['date'] );
         }
         if( !empty( $query_data['params']['order'] ) )
         {
@@ -236,6 +241,10 @@ class olap_query
         $this->where_in( $where_ins );
         $this->group_by( $group_bys );
     }
+    function where_date( $dates )
+    {
+        $this->_merge_sql_param( 'where_dates', $dates );
+    }
     /**
      * If specified, will add the parameters to the sql 'order by'.
      * If not specified or empty, it will use the cube's default order
@@ -335,6 +344,10 @@ class olap_query
         {
             $this->compile_where_in( $where_in );
         }
+        if( !empty($where_dates) )
+        {
+            $this->compile_where_dates( $where_dates );
+        }
         if( !empty($group_by) )
         {
             $this->compile_group_by( $group_by );
@@ -380,25 +393,34 @@ class olap_query
         $or_groups = array();
         foreach( $data as $name => $wig )
         {
-            if( count($wig) == 1 )
-            {
-                $this->compile_where_in( $wig );
-            }
-            else
+            if( count($wig) > 1 )
             {
                 $or_groups[] = $wig;
             }
-        }
-        $this->db->group_start();
-        foreach($or_groups as $wig) {
-            $this->db->or_group_start();
-            foreach( $wig as $wi )
+            else
             {
-                $this->db->where_in( $wi[0], $wi[1] );
+                $this->compile_where_in( $wig );
+            }
+        }
+        if( $or_groups )
+        {
+            $this->db->group_start();
+            foreach($or_groups as $wig) {
+                $this->db->or_group_start();
+                foreach( $wig as $wi )
+                {
+                    $this->db->where_in( $wi[0], $wi[1] );
+                }
+                $this->db->group_end();
             }
             $this->db->group_end();
         }
-        $this->db->group_end();
+    }
+    private function compile_where_dates( $dates )
+    {
+        $start = explode('-', $dates[0]);
+        $end   = explode('-', $dates[1]);
+        $this->db->where(" (CONCAT(year,'-',month,'-',day))::timestamp BETWEEN '".$dates[0]."'::timestamp AND '".$dates[1]."'::timestamp ");
     }
     private function compile_group_by( $data )
     {

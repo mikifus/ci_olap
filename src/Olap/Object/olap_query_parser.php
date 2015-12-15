@@ -61,6 +61,10 @@ class olap_query_parser
         {
             $parameters['count'] = $this->parse_count( $params['count'] );
         }
+        if( !empty($params['date']) )
+        {
+            $parameters['date'] = $this->parse_dates( $params['date'] );
+        }
         
         $parameters['limit'] = $this->parse_limit( $params['page'], $params['pagesize'] );
         
@@ -157,5 +161,16 @@ class olap_query_parser
             $limit['pagesize'] = abs($pagesize);
         }
         return $limit;
+    }
+    /**
+     * Date parameter parsing.
+     * It only works if there are date dimensions defined.
+     * @param array $date_data
+     * @return array
+     */
+    private function parse_dates( $dates_data )
+    {
+        $dates = explode('|', $dates_data);
+        return $dates;
     }
 }
