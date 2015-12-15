@@ -203,8 +203,8 @@ class olap_query
                         continue;
                     }
                     $level = $h[ $c ];
-                    $last_field = $level->first_field( $t_fact );
-                    $where_ins[] = array( $last_field, $step );
+                    $current_field = $level->first_field( $t_fact );
+                    $where_ins[] = array( $current_field, $step );
                 }
                 // We can keep the last field of the hierarchy to group by
                 $group_bys[] = $last_field;
