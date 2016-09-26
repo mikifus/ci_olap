@@ -389,7 +389,8 @@ class olap_query
     {
         foreach( $data as $wi )
         {
-            $this->db->where_in( $wi[0], $wi[1] );
+            $values = str_replace('$', ',', $wi[1]);
+            $this->db->where_in( $wi[0], $values, false );
         }
     }
     private function compile_where_in_groups( $data )
