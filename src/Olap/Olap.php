@@ -4,17 +4,17 @@
 */
 namespace Olap;
 
-use \Olap\Object\olap_query;
-use \Olap\Object\olap_cube;
-use \Olap\Object\olap_measure;
-use \Olap\Object\olap_dimension;
-use \Olap\Object\olap_query_parser;
-
 require 'Object/olap_query.php';
 require 'Object/olap_cube.php';
 require 'Object/olap_measure.php';
 require 'Object/olap_dimension.php';
 require 'Object/olap_query_parser.php';
+
+use \Olap\Object\olap_query;
+use \Olap\Object\olap_cube;
+use \Olap\Object\olap_measure;
+use \Olap\Object\olap_dimension;
+use \Olap\Object\olap_query_parser;
 
 
 if ( ! defined('BASEPATH')) exit('No direct script access allowed');
@@ -26,13 +26,13 @@ class Olap
      * @var $_CI
      */
     private $_CI;
-    
+
     /**
      * Stores the configured cubes
      * @var $cubes
      */
     private $cubes = array();
-    
+
     /**
      * Prefix for the OLAP tables
      * @var $prefix
@@ -42,7 +42,7 @@ class Olap
     private $prefix = '';
     private $prefix_fact = '';
     private $prefix_dimension = '';
-    
+
     /**
      * Gets the CI instance.
      * Gets the db.
@@ -64,12 +64,12 @@ class Olap
         }
         $this->db = $this->_CI->db;
     }
-    
+
     /**
      * Saves a new record in a fact table.
      * Arguments can be variable. They depend on the amount
      * of measures and dimensions.
-     * 
+     *
      * @param string $fact_name: First argument defines the rest
      */
     public function add()
@@ -82,10 +82,10 @@ class Olap
         }
         return FALSE;
     }
-    
+
     /**
      * Checks if a cube exists in the loaded configuration
-     * 
+     *
      * @param  string $fact_name
      * @return boolean
      */
@@ -94,11 +94,11 @@ class Olap
         $info = $this->cube_info( $fact_name );
         return (bool) !empty( $info );
     }
-    
+
     /**
      * Prepares the procedure and the data for the database
      * to insert a new record.
-     * 
+     *
      * @param  string $fact_name
      * @param  array  $args
      * @return boolean
@@ -106,13 +106,13 @@ class Olap
     private function _add( $fact_name, $args )
     {
         $cube   = $this->get_cube( $fact_name );
-        $q      = new \olap_query ( $this->db ) ;
+        $q      = new olap_query ( $this->db ) ;
         return $q->procedure( $cube, $args );
     }
 
     /**
      * Returns the config info of a cube.
-     * 
+     *
      * @param  string $fact_name
      * @return array
      */
@@ -165,7 +165,7 @@ class Olap
      * Main method of the library.
      * It processes a query string and returns
      * the resulting data.
-     * 
+     *
      * @param string $query
      * @return string|array
      */
@@ -174,22 +174,22 @@ class Olap
         $result = array();
         $q = $this->build_query( $query );
         $result = $q->result();
-        
+
         // WARNING: DEBUG
         $this->last_query = $this->db->last_query();
-        
+
         if( $result === FALSE )
         {
             throw new \Exception("Olap library: The database query failed!");
         }
         return $result;
     }
-    
+
     /**
      * Builds, compiles the database query and returns it as
      * a string.
      * FOr debugging purposes.
-     * 
+     *
      * @param string $query
      * @return string
      */
@@ -198,10 +198,10 @@ class Olap
         $q = $this->build_query( $query );
         return $q->get_compiled_query();
     }
-    
+
     /**
      * Builds an olap query object from a query string.
-     * 
+     *
      * @param string $query
      * @return \Olap\Object\olap_query
      */
@@ -217,7 +217,7 @@ class Olap
         }
         $q->set_cube( $cube );
         $q->build( $q_data );
-        
+
         return $q;
     }
 }

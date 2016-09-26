@@ -5,7 +5,7 @@ if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 /**
 * Like Cubes toolkit
 * @see https://en.wikipedia.org/wiki/Cubes_(OLAP_server)
-* 
+*
 * The query object builds database queries from a set of commands
 * generated when parsing the query string.
 */
@@ -32,7 +32,7 @@ class olap_query
     /**
      * The constructor reads the config file and stores
      * the data in the class instance.
-     * 
+     *
      * $db is a CI database object.
      *
      * @param database $db
@@ -107,12 +107,12 @@ class olap_query
     /**
      * Aliases for each sql parameters setters.
      * The method name is used for this.
-     * 
+     *
      * @method select
      * @method where_in
      * @method group_by
      * @method order_by
-     * 
+     *
      * @param array $info
      */
     private function select( $info )
@@ -171,7 +171,7 @@ class olap_query
         }
     }
     /**
-     * Adds all measures and dimensions fields to 
+     * Adds all measures and dimensions fields to
      * sql 'select' and 'group_by'.
      */
     public function select_all()
@@ -185,7 +185,7 @@ class olap_query
      * OLAP cut command. It fills the sql parameters according
      * to the specified cut. It allows to cut by measure, dimension
      * or other fields. Some require as well to group by (for aggregation).
-     * 
+     *
      * When cutting, values are as well supported.
      *
      * @param array $cut
@@ -215,12 +215,16 @@ class olap_query
                         continue;
                     }
                     $level = $h[ $step['name'] ];
+                    if( empty($level) )
+                    {
+                        throw new \Exception("Olap library: Hierarchy level not found. Wrong parameters or bad config.");
+                    }
                     $current_field = $level->first_field( $t_fact );
                     $where_in_groups[ $reference ][] = array( $current_field, $step['values'] );
                 }
                 // We can keep the last field of the hierarchy to group by
                 $group_bys[$last_field] = $last_field;
-                
+
                 // We add the cut as info to select
                 $this->select( (array) $last_field );
             }
@@ -236,7 +240,7 @@ class olap_query
                 $group_bys[$field] = $field;
             }
         }
-        
+
         $this->where_in_groups( $where_in_groups );
         $this->where_in( $where_ins );
         $this->group_by( $group_bys );
@@ -249,12 +253,12 @@ class olap_query
      * If specified, will add the parameters to the sql 'order by'.
      * If not specified or empty, it will use the cube's default order
      * parameters, specified in the config file.
-     * 
+     *
      * The data can be sorted by measures and dimensions.
-     * 
+     *
      * If not specified, the direction of the order will be
      * by default DESC (descending).
-     * 
+     *
      * @param array $order_param
      */
     public function order( $order_param = array() )
@@ -329,9 +333,9 @@ class olap_query
     private function compile_query()
     {
         $t_fact = $this->cube->current_view();
-        
+
         extract( $this->sql_params );
-        
+
         if( !empty($select) )
         {
             $this->compile_select( $select );
@@ -364,14 +368,14 @@ class olap_query
     }
     /**
      * Compilation steps encapsulated
-     * 
+     *
      * @method compile_select
      * @method compile_where_in
      * @method compile_where_in_groups
      * @method compile_group_by
      * @method compile_order_by
      * @method compile_limit
-     * 
+     *
      * @param array $data
      */
     private function compile_select( $data )
@@ -450,12 +454,12 @@ class olap_query
     /**
      * Runs the current cube procedure with the specified
      * arguments.
+     * @param olap_cube $cube
      * @param array $arguments
      * @return string
      */
-    public function procedure( $arguments )
+    public function procedure( $cube, $arguments )
     {
-        $cube = $this->cube;
         $fields = $cube->get_procedure_fields();
         if( count($fields) != count($arguments) )
         {
