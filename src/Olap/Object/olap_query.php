@@ -464,7 +464,7 @@ class olap_query
         $fields = $cube->get_procedure_fields();
         if( count($fields) != count($arguments) )
         {
-            throw new Exception("Olap: Data compilation failed (wrong parameters).");
+            throw new \Exception("Olap: Data compilation failed (wrong parameters).");
         }
         $procedure_name = $cube->current_view();
         $procedure = $this->make_procedure( $procedure_name, count($fields) );
