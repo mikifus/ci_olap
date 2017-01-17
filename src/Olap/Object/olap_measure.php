@@ -20,23 +20,30 @@ class olap_measure
      */
     protected $data = array();
     /**
+     * The measure data is its definition,
+     * specified in the config file
+     * @var $data
+     */
+    protected $name = array();
+    /**
      * Setting initial data
      * @param \Olap\Object\olap_cube $cube
      * @param array $data
      */
-    function __construct( $cube, $data )
+    function __construct( $cube, $name, $data )
     {
         $this->cube = $cube;
         $this->data = $data;
+        $this->name = $name;
     }
     /**
      * Measures have one field, but as this class
      * is extended to dimensions, the methods are
      * called the same.
-     * 
+     *
      * It returns the measure field, with, optionally,
      * a table prefix.
-     * 
+     *
      * @param string $table
      * @return string
      */

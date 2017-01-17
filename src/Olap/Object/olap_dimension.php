@@ -11,13 +11,13 @@ class olap_dimension extends olap_measure
 {
     /**
      * A cube is required to initiate the class.
-     * 
+     *
      * @param \Olap\Object\olap_cube $cube
      * @param array $data
      */
-    function __construct( $cube, $data )
+    function __construct( $cube, $name, $data )
     {
-        parent::__construct( $cube, $data );
+        parent::__construct( $cube, $name, $data );
     }
     /**
      * List of fields, can optionally add a prefix.
@@ -100,5 +100,9 @@ class olap_dimension extends olap_measure
         }
         $next_level = reset( $this->data['hierarchy'] );
         return $this->cube->dimension( $next_level );
+    }
+
+    function name() {
+        return $this->name;
     }
 }

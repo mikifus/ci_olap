@@ -22,7 +22,8 @@ class olap_query
                 'where_in_groups' => array(),
                 'where_dates' => array(),
                 'group_by' => array(),
-                'order_by' => array()
+                'order_by' => array(),
+                'join' => array()
             );
     /**
      * The olap cube object
@@ -135,6 +136,10 @@ class olap_query
     {
         $this->_merge_sql_param( __FUNCTION__, $info );
     }
+    private function join( $info )
+    {
+        $this->_merge_sql_param( __FUNCTION__, $info );
+    }
     /**
      * This methods adds aggregate functions to sql 'select'.
      * A total amount count is always added. Then a sumatory of all measures.
@@ -193,19 +198,25 @@ class olap_query
     public function cut( $cut )
     {
         $cube = $this->cube;
-        $t_fact = $cube->current_view();
         $group_bys = array();
         $where_in_groups = array();
         $where_ins = array();
         foreach( $cut as $reference => $cp )
         {
-            if( $dimension = $cube->dimension( $cp['dimension'] ) )
+            // Reset this value
+            $t_fact = $cube->current_view();
+            $dim = $cp['dimension'] ;
+            if( $dimension = $cube->dimension( $dim ) )
             {
                 $h = $dimension->hierarchy();
                 $where_in_groups[ $reference ] = array();
                 if( empty($h) )
                 {
                     $h = array( $dimension );
+                }
+                if( strpos($dimension->name(), '.') ){
+                    $dim_exploded = explode('.', $dimension->name());
+                    $t_fact = $this->prefix.$this->prefix_dimension.$dim_exploded[0];
                 }
                 $last_field = $dimension->first_field( $t_fact );
                 foreach( $cp['path'] as $c => $step )
@@ -227,11 +238,15 @@ class olap_query
 
                 // We add the cut as info to select
                 $this->select( (array) $last_field );
+
+                // Join the dimension table
+                $this->join( array( array($dimension->name(), $t_fact) ) );
             }
             // It might be a measure to cut by!
             else if( $measure = $cube->measure( $cp['dimension'] ) && !empty($cp['path']) )
             {
-                $where_ins[] = array( $measure->first_field( $t_fact ), $cp['path'] );
+                $field = null;
+                $where_ins[] = array( $field, $cp['path'] );
             }
             else if( $measure = $cube->measure( $cp['dimension'] ) )
             {
@@ -278,7 +293,13 @@ class olap_query
             if( $dimension = $cube->dimension( $order['name'] ) )
             {
                 // It is a dimension
-                $field = $dimension->first_field( $t_fact );
+                if( strpos($dimension->name(), '.') ){
+                    $dim_exploded = explode('.', $dimension->name());
+                    $t_dimension = $this->prefix.$this->prefix_dimension.$dim_exploded[0];
+                    $field = $dimension->first_field( $t_dimension );
+                } else {
+                    $field = $dimension->first_field( $t_fact );
+                }
                 $this->order_by( (array) ($field . " " . $order['order']) );
                 $this->group_by( (array) $field );
             }
@@ -316,6 +337,8 @@ class olap_query
         $this->compile_query();
         // Get the data
         $query = $this->db->get();
+        var_dump($this->db->last_query());
+        var_dump($this->db->error());
         if( !$query )
         {
             return FALSE;
@@ -339,6 +362,10 @@ class olap_query
         if( !empty($select) )
         {
             $this->compile_select( $select );
+        }
+        if( !empty($join) )
+        {
+            $this->compile_join( $join );
         }
         if( !empty($where_in_groups) )
         {
@@ -385,6 +412,20 @@ class olap_query
             $this->db->select( $params );
         }
     }
+    private function compile_join( $data )
+    {
+        foreach( $data as $params )
+        {
+            $t_dimension = $params[0];
+            if( strpos($t_dimension, '.') ) {
+                $dim = explode('.', $t_dimension);
+                $t_dimension = $dim[0];
+            }
+            $t_fact = $params[1];
+            $rt_dimension = $this->prefix.$this->prefix_dimension.$t_dimension;
+            $this->db->join( $rt_dimension, $rt_dimension.'.id_'.$t_dimension.'='.$t_fact.'.id_'.$t_dimension, 'RIGHT' );
+        }
+    }
     private function compile_where_in( $data )
     {
         foreach( $data as $wi )
@@ -425,7 +466,7 @@ class olap_query
     {
         $start = explode('-', $dates[0]);
         $end   = explode('-', $dates[1]);
-        $this->db->where(" (CONCAT(year,'-',month,'-',day))::timestamp BETWEEN '".$dates[0]."'::timestamp AND '".$dates[1]."'::timestamp ");
+        $this->db->where(" olap_d_time.datetime BETWEEN '".$dates[0]."'::timestamp AND '".$dates[1]."'::timestamp ");
     }
     private function compile_group_by( $data )
     {
