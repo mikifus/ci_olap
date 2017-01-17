@@ -337,8 +337,6 @@ class olap_query
         $this->compile_query();
         // Get the data
         $query = $this->db->get();
-        var_dump($this->db->last_query());
-        var_dump($this->db->error());
         if( !$query )
         {
             return FALSE;
