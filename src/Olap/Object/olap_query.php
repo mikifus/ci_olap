@@ -208,6 +208,12 @@ class olap_query
             // Reset this value
             $t_fact = $cube->current_view();
             $dim = $cp['dimension'] ;
+            if( strpos($dim, '.') ){
+                $dim_exploded = explode('.', $dim);
+                $dim = $dim_exploded[0];
+                $t_fact = $this->prefix.$this->prefix_dimension.$dim_exploded[0];
+            }
+
             if( $dimension = $cube->dimension( $dim ) )
             {
                 $h = $dimension->hierarchy();
@@ -215,10 +221,6 @@ class olap_query
                 if( empty($h) )
                 {
                     $h = array( $dimension );
-                }
-                if( strpos($dimension->name(), '.') ){
-                    $dim_exploded = explode('.', $dimension->name());
-                    $t_fact = $this->prefix.$this->prefix_dimension.$dim_exploded[0];
                 }
                 $last_field = $dimension->first_field( $t_fact );
                 foreach( $cp['path'] as $c => $step )
@@ -242,7 +244,7 @@ class olap_query
                 $this->select( (array) $last_field );
 
                 // Join the dimension table
-                $this->join( array( array($dimension->name(), $t_fact) ) );
+                $this->join( array( array($dimension->name(), $cube->current_view()) ) );
             }
             // It might be a measure to cut by!
             else if( $measure = $cube->measure( $cp['dimension'] ) && !empty($cp['path']) )
@@ -430,8 +432,8 @@ class olap_query
     {
         foreach( $data as $wi )
         {
-            $values = str_replace('$', ',', $wi[1]);
-            $this->db->where_in( $wi[0], $values, false );
+            $values = $wi[1];
+            $this->db->where_in( $wi[0], $values );
         }
     }
     private function compile_where_in_groups( $data )
