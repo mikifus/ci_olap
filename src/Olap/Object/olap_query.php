@@ -155,6 +155,8 @@ class olap_query
         {
             // SUM
             $select[] = "sum(".$m->first_field($t_fact).") as ".$m->first_field()."_sum";
+            // AVG
+            $select[] = "avg(".$m->first_field($t_fact).") as ".$m->first_field()."_avg";
         }
         $this->select( $select );
     }
