@@ -464,6 +464,7 @@ class olap_query
     {
         $start = explode('-', $dates[0]);
         $end   = explode('-', $dates[1]);
+        $this->db->join('olap_d_time', 'id_time');
         $this->db->where(" olap_d_time.datetime BETWEEN '".$dates[0]."'::timestamp AND '".$dates[1]."'::timestamp ");
     }
     private function compile_group_by( $data )
