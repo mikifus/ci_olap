@@ -28,7 +28,7 @@ class olap_query_parser
     }
     /**
      * Parses a query step by step
-     * 
+     *
      * @see http://es.slideshare.net/Stiivi/cubes-7781602
      * @param  string $query
      * @return array
@@ -39,12 +39,12 @@ class olap_query_parser
         $divide = explode( '?', trim($query) );
         $parts  = explode( '/', $divide[0]);
         parse_str( $divide[1], $params );
-        
+
         $view   = array_shift( $parts );
         $action = array_shift( $parts );
-        
+
         $parameters = array();
-        
+
         if( !empty($params['select']) )
         {
             $parameters['select'] = $this->parse_select( $params['select'] );
@@ -52,6 +52,10 @@ class olap_query_parser
         if( !empty($params['cut']) )
         {
             $parameters['cut'] = $this->parse_cut( $params['cut'] );
+        }
+        if( !empty($params['drilldown']) )
+        {
+            $parameters['drilldown'] = $this->parse_drilldown( $params['drilldown'] );
         }
         if( !empty($params['order']) )
         {
@@ -65,9 +69,9 @@ class olap_query_parser
         {
             $parameters['date'] = $this->parse_dates( $params['date'] );
         }
-        
+
         $parameters['limit'] = $this->parse_limit( $params['page'], $params['pagesize'] );
-        
+
         return array(
             'view'    => $view,
             'action'  => $action,
@@ -83,6 +87,32 @@ class olap_query_parser
     {
         $sel_params = explode('|', $sel_data);
         return $sel_params;
+    }
+    /**
+     * Drilldown parameter parsing
+     * @param array $drilldown_data
+     * @return array
+     */
+    private function parse_drilldown( $drilldown_data )
+    {
+        $drilldown_params = explode('|', $drilldown_data);
+        $drilldown = array();
+        foreach( $drilldown_params as $dp )
+        {
+            $dp   = explode(':', $dp);
+            $selects_data = isset($dp[1]) ? explode(',', $dp[1]) : array();
+            $selects = array();
+            foreach( $selects_data as $select )
+            {
+//                $path[] = array('name'=>$step, 'values'=>explode( '$', $values ));
+                $selects[] = $select;
+            }
+            $drilldown[] = array(
+                'dimension' => $dp[0],
+                'selects'   => $selects
+            );
+        }
+        return $drilldown;
     }
     /**
      * Cut parameter parsing

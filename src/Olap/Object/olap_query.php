@@ -86,6 +86,10 @@ class olap_query
         {
             $this->cut( $query_data['params']['cut'] );
         }
+        if( !empty( $query_data['params']['drilldown'] ) )
+        {
+            $this->drilldown( $query_data['params']['drilldown'] );
+        }
         if( !empty( $query_data['params']['date'] ) )
         {
             $this->where_date( $query_data['params']['date'] );
@@ -189,21 +193,16 @@ class olap_query
         $this->group_by( $cube->get_all_fields() );
     }
     /**
-     * OLAP cut command. It fills the sql parameters according
-     * to the specified cut. It allows to cut by measure, dimension
-     * or other fields. Some require as well to group by (for aggregation).
+     * OLAP drilldown command.
+     * Manages the group by and row selection (for aggregation).
      *
-     * When cutting, values are as well supported.
-     *
-     * @param array $cut
+     * @param array $drilldown
      */
-    public function cut( $cut )
+    public function drilldown( $drilldown )
     {
         $cube = $this->cube;
         $group_bys = array();
-        $where_in_groups = array();
-        $where_ins = array();
-        foreach( $cut as $reference => $cp )
+        foreach( $drilldown as $cp )
         {
             // Reset this value
             $t_fact = $cube->current_view();
@@ -216,32 +215,86 @@ class olap_query
 
             if( $dimension = $cube->dimension( $dim ) )
             {
+                if( !empty($cp['selects']) ) {
+                    foreach( $cp['selects'] as $current_field )
+                    {
+                        if( empty($current_field) )
+                        {
+                            continue;
+                        }
+                        if( ! strpos($current_field, '.') ){
+                            $current_field = $this->prefix.$this->prefix_dimension.$dimension->name().'.'.$current_field;
+                        }
+
+                        // We add the info to select
+                        $this->select( (array) $current_field );
+                        $group_bys[$last_field] = $current_field;
+                    }
+                } else {
+                    $current_field = $dimension->first_field( $t_fact );
+                    $this->select( (array) $current_field );
+                    $group_bys[$last_field] = $current_field;
+                }
+            }
+            else if( $measure = $cube->measure( $cp['dimension'] ) )
+            {
+                $field = $measure->first_field( $t_fact );
+                $this->select( (array) $field );
+                $group_bys[$field] = $field;
+            }
+        }
+
+        $this->group_by( $group_bys );
+    }
+    /**
+     * OLAP cut command. It fills the sql parameters according
+     * to the specified cut. It allows to cut by measure, dimension
+     * or other fields. Some require as well to group by (for aggregation).
+     *
+     * When cutting, values are as well supported.
+     *
+     * @param array $cut
+     */
+    public function cut( $cut )
+    {
+        $cube = $this->cube;
+        $where_in_groups = array();
+        $where_ins = array();
+        foreach( $cut as $reference => $cp )
+        {
+            // Reset this value
+            $t_fact = $cube->current_view();
+            $dim           = $cp['dimension'] ;
+            $current_field = $cp['dimension'] ;
+            if( strpos($dim, '.') ){
+                $dim_exploded = explode('.', $dim);
+                $dim = $dim_exploded[0];
+                $t_fact        = $this->prefix.$this->prefix_dimension.$dim_exploded[0];
+                $current_field = $dim_exploded[1];
+            }
+
+            if( $dimension = $cube->dimension( $dim ) )
+            {
                 $h = $dimension->hierarchy();
                 $where_in_groups[ $reference ] = array();
                 if( empty($h) )
                 {
                     $h = array( $dimension );
                 }
-                $last_field = $dimension->first_field( $t_fact );
                 foreach( $cp['path'] as $c => $step )
                 {
                     if( empty($step) )
                     {
                         continue;
                     }
-                    $level = $h[ $step['name'] ];
-                    if( empty($level) )
-                    {
-                        throw new \Exception("Olap library: Hierarchy level not found. Wrong parameters or bad config.");
-                    }
-                    $current_field = $level->first_field( $t_fact );
+//                    $level = $h[ $step['name'] ];
+//                    if( empty($level) )
+//                    {
+//                        throw new \Exception("Olap library: Hierarchy level not found. Wrong parameters or bad config.");
+//                    }
+//                    $current_field = $level->first_field( $t_fact );
                     $where_in_groups[ $reference ][] = array( $current_field, $step['values'] );
                 }
-                // We can keep the last field of the hierarchy to group by
-                $group_bys[$last_field] = $last_field;
-
-                // We add the cut as info to select
-                $this->select( (array) $last_field );
 
                 // Join the dimension table
                 $this->join( array( array($dimension->name(), $cube->current_view()) ) );
@@ -252,17 +305,10 @@ class olap_query
                 $field = null;
                 $where_ins[] = array( $field, $cp['path'] );
             }
-            else if( $measure = $cube->measure( $cp['dimension'] ) )
-            {
-                $field = $measure->first_field( $t_fact );
-                $select[] = $this->select( (array) $field );
-                $group_bys[$field] = $field;
-            }
         }
 
         $this->where_in_groups( $where_in_groups );
         $this->where_in( $where_ins );
-        $this->group_by( $group_bys );
     }
     function where_date( $dates )
     {
