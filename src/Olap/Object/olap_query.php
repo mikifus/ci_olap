@@ -287,12 +287,17 @@ class olap_query
                     {
                         continue;
                     }
-//                    $level = $h[ $step['name'] ];
-//                    if( empty($level) )
-//                    {
-//                        throw new \Exception("Olap library: Hierarchy level not found. Wrong parameters or bad config.");
-//                    }
-//                    $current_field = $level->first_field( $t_fact );
+                    if( !in_array($current_field, $dimension->fields()) ) {
+                        $level = $h[ $step['name'] ];
+                        if( empty($level) )
+                        {
+                            throw new \Exception("Olap library: Hierarchy level not found. Wrong parameters or bad config.");
+                        }
+                        $current_field = $level->first_field( $t_fact );
+                    }
+                    if( ! strpos($current_field, '.') ){
+                        $current_field = $this->prefix.$this->prefix_dimension.$dimension->name().'.'.$current_field;
+                    }
                     $where_in_groups[ $reference ][] = array( $current_field, $step['values'] );
                 }
 
