@@ -30,6 +30,13 @@ class olap_query
      * @var $cube
      */
     private $cube;
+
+    /**
+     * Errors array
+     * @var $_errors
+     */
+    private $_errors;
+
     /**
      * The constructor reads the config file and stores
      * the data in the class instance.
@@ -154,7 +161,7 @@ class olap_query
         $t_fact = $cube->current_view();
         $select = array();
         // COUNT
-        $select[] = "count(".$t_fact.") as ".$cube->fact()."_count";
+        $select[] = "count(DISTINCT ".$t_fact.") as ".$cube->fact()."_count"; // TODO: Check if DISTINCT is being used correctly
         foreach( $cube->measures() as $m )
         {
             // SUM
@@ -177,7 +184,7 @@ class olap_query
         $fields = explode('|',$fields);
         foreach( $fields as $fld )
         {
-            $select = array("count(".$t_fact.".".$fld.") as ".$fld."_count");
+            $select = array("count(DISTINCT ".$t_fact.".".$fld.") as ".$fld."_count"); // TODO: Check if DISTINCT is being used correctly
             $this->select( $select );
         }
     }
@@ -394,6 +401,7 @@ class olap_query
         $query = $this->db->get();
         if( !$query )
         {
+            $this->_errors = $this->db->error;
             return FALSE;
         }
         if ($query->num_rows() > 0)
@@ -547,6 +555,7 @@ class olap_query
         $this->db->reset_query();
         return $r;
     }
+
     /**
      * Runs the current cube procedure with the specified
      * arguments.
@@ -565,6 +574,7 @@ class olap_query
         $procedure = $this->make_procedure( $procedure_name, count($fields) );
         return $this->db->query('SELECT '.$procedure.";", $arguments);
     }
+
     /**
      * Generates a string to run the procedure in
      * ActiveRecord.
@@ -572,5 +582,13 @@ class olap_query
     private function make_procedure( $procedure_name, $count )
     {
         return $procedure_name . "( " . implode(',', array_fill( 0, $count, '?' ) ) . " )";
+    }
+
+    /**
+     * Getter for the errors array
+     * @return array
+     */
+    public function errors() {
+        return $this->_errors;
     }
 }

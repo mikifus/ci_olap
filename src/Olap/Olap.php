@@ -44,6 +44,12 @@ class Olap
     private $prefix_dimension = '';
 
     /**
+     * Errors that happen during a query
+     * @var $cubes
+     */
+    private $_errors = array();
+
+    /**
      * Gets the CI instance.
      * Gets the db.
      */
@@ -174,6 +180,7 @@ class Olap
         $result = array();
         $q = $this->build_query( $query );
         $result = $q->result();
+        $this->_errors = $q->errors();
 
         // WARNING: DEBUG
         $this->last_query = $this->db->last_query();
@@ -219,5 +226,13 @@ class Olap
         $q->build( $q_data );
 
         return $q;
+    }
+
+    /**
+     * Getter for the errors array
+     * @return array
+     */
+    public function error() {
+        return $this->_errors;
     }
 }
