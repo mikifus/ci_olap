@@ -184,7 +184,7 @@ class olap_query
         $fields = explode('|',$fields);
         foreach( $fields as $fld )
         {
-            $select = array("count(DISTINCT ".$t_fact.".".$fld.") as ".$fld."_count"); // TODO: Check if DISTINCT is being used correctly
+            $select = array("count(".$t_fact.".".$fld.") as ".$fld."_count");
             $this->select( $select );
         }
     }
