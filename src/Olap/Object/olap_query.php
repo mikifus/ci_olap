@@ -184,7 +184,11 @@ class olap_query
         $fields = explode('|',$fields);
         foreach( $fields as $fld )
         {
-            $select = array("count(".$t_fact.".".$fld.") as ".$fld."_count");
+            if( $fld == '*' ) {
+                $select = array("count(".$t_fact.".".$fld.") as _count");
+            } else {
+                $select = array("count(DISTINCT ".$t_fact.".".$fld.") as ".$fld."_count");
+            }
             $this->select( $select );
         }
     }
