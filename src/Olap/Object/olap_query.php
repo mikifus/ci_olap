@@ -375,6 +375,10 @@ class olap_query
                 $this->order_by( (array) ($field . " " . $order['order']) );
                 $this->group_by( (array) $field );
             }
+            else
+            {
+                $this->order_by( (array) ($order['name'] . " " . $order['order']) );
+            }
         }
     }
     /**
