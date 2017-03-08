@@ -16,6 +16,8 @@ The implementation is divided in three steps.
 ### 1. Prepare the configuration file ###
 The configuration file, located in "src/config/olap.php", must be added to the config folder on your CodeIgniter application folder. The 'cubes' array is the first point on which you may focus.
 
+After the cubes are set up, you may add some dimensions. Those
+
 Before that I want to call the attention on the end of the file where some prefix strings are set. These are merely decorative elements for your database to look nicer and avoid collisions of table names. You can leave this blank if you want. If you are using PostgreSQL you might want to set up an schema for these tables rather than using prefixes.
 
 ### 2. Prepare the database ###
@@ -40,6 +42,16 @@ $this->load->library('olap', array( 'db' => $this->db ));
 Check out the example_config.php file. In this example you have a cube ready to work. The cube is mainly has four components: fact, views, measures and dimensions.
 
 These components' names and descriptions have to represent the database tables and its columns, as well as the behavior of the dimensions (more on this later).
+
+The example fact table would look like this:
+```sql
+CREATE TABLE olap_f_sale (
+    price    INT NOT NULL,
+    shop     INT NOT NULL,
+    product  INT NOT NULL,
+    time     INT NOT NULL,
+);
+```
 
 #### Fact ####
 The fact is defined as the event you want to store in the database. In the example we store 'sales'. This string will be used as a database table name, with its prefix, keep this in mind.
@@ -66,11 +78,6 @@ Dimensions can have a hierarchy, in which they are connected to each other in a 
 In our example the dimensions are shops and products stored by their ID. We could add many more, like a customer ID, the product color, etc.
 
 Wait! What is that "time" string over there? Continue reading.
-
-### Preset dimensions ###
-Preset dimensions are a way to re-use dimensions among cubes. This is not only a DRY practise or an optimization, the cubes will actually re-use the database tables. This will allow you to connect one cube to another and cross multidimensional data.
-
-Nobody will stop you from copy-pasting the dimensions data from one cube to another. Just remember that if they're called the same, they will use the same database table.
 
 ### Dimensions hierarchy ###
 Dimensions hierarchies can be stablished in the configuration file definition. Just add a list of the dimensions under the current one. Try not to create a recursive relationship and remember that they can only be one-to-many, otherwise they're just not hierarchical.

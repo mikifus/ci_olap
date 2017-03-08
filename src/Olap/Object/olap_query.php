@@ -571,16 +571,49 @@ class olap_query
      * @param array $arguments
      * @return string
      */
-    public function procedure( $cube, $arguments )
+//    public function procedure( $cube, $arguments )
+//    {
+//        $fields = $cube->get_procedure_fields();
+//        if( count($fields) != count($arguments) )
+//        {
+//            throw new \Exception("Olap: Data compilation failed (wrong parameters).");
+//        }
+//        $procedure_name = $cube->current_view();
+//        $procedure = $this->make_procedure( $procedure_name, count($fields) );
+//        return $this->db->query('SELECT '.$procedure.";", $arguments);
+//    }
+
+    public function insert_fact( $cube, $parameters ) {
+        $table_name = $cube->current_view();
+        // Check for duplicates
+        $query = $this->db->where($parameters)->get($table_name);
+        if( !$query || $query->num_rows() == 0 ) {
+            return $this->db->insert($table_name, $parameters);
+        }
+        return FALSE;
+    }
+
+    /**
+     * Runs a dimension procedure.
+     *
+     * @param olap_dimension $dimension
+     * @param array $arguments
+     * @return string
+     */
+    public function dim_procedure( $dimension, $fields, $arguments )
     {
-        $fields = $cube->get_procedure_fields();
         if( count($fields) != count($arguments) )
         {
             throw new \Exception("Olap: Data compilation failed (wrong parameters).");
         }
-        $procedure_name = $cube->current_view();
-        $procedure = $this->make_procedure( $procedure_name, count($fields) );
-        return $this->db->query('SELECT '.$procedure.";", $arguments);
+        $t_dim = $this->prefix_dimension.$dimension;
+        $procedure = $this->make_procedure( $t_dim, count($fields) );
+        $query = $this->db->query('SELECT '.$procedure." as id;", $arguments);
+        if( !$query ) {
+            $this->_errors = $this->db->error();
+            return 0;
+        }
+        return $query->row()->id;
     }
 
     /**
@@ -589,7 +622,7 @@ class olap_query
      */
     private function make_procedure( $procedure_name, $count )
     {
-        return $procedure_name . "( " . implode(',', array_fill( 0, $count, '?' ) ) . " )";
+        return $this->db->protect_identifiers($procedure_name) . "( " . implode(',', array_fill( 0, $count, '?' ) ) . " )";
     }
 
     /**

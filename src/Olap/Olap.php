@@ -53,7 +53,7 @@ class Olap
      * Gets the CI instance.
      * Gets the db.
      */
-    public function __construct()
+    public function __construct( $db = null )
     {
         $this->_CI =& get_instance();
         log_message('debug', 'Olap: Library initialized.');
@@ -65,10 +65,11 @@ class Olap
             $this->prefix_fact      = $config['prefix_fact'];
             $this->prefix_dimension = $config['prefix_dimension'];
             $this->prefix_view      = $config['prefix_view'];
-            $this->preset_dimensions = $config['preset_dimensions'];
+//            $this->preset_dimensions = $config['preset_dimensions'];
+            $this->dimensions = $config['dimensions'];
             $this->default_pagesize = $config['default_pagesize'];
         }
-        $this->db = $this->_CI->db;
+        $this->db = !is_null($db) ? $db : $this->_CI->db;
     }
 
     /**
@@ -76,15 +77,26 @@ class Olap
      * Arguments can be variable. They depend on the amount
      * of measures and dimensions.
      *
-     * @param string $fact_name: First argument defines the rest
+     * @param string $fact_name: Fact or cube name
+     * @param array $parameters: Named parameters for this cube
      */
-    public function add()
+    public function add( $fact_name, $parameters )
     {
-        $args      = func_get_args();
-        $fact_name = array_shift($args); // Extract first
         if( $this->cube_exists( $fact_name ) )
         {
-            return $this->_add( $fact_name, $args );
+            $cube       = $this->get_cube( $fact_name );
+            $insert_params = array();
+            foreach( $parameters as $param_name => $value ) {
+                if( $cube->is_measure($param_name) ) {
+                    $insert_params[ $param_name ] = $value;
+                } else {
+                    $d = $cube->dimension( $param_name );
+                    $insert_params[ $d->insert_field() ] = $value;
+                }
+            }
+
+            $q = new olap_query ( $this->db ) ;
+            return $q->insert_fact( $cube, $insert_params );
         }
         return FALSE;
     }
@@ -109,17 +121,33 @@ class Olap
      * @param  array  $args
      * @return boolean
      */
-    private function _add( $fact_name, $args )
+//    private function _add( $fact_name, $args )
+//    {
+//        $cube   = $this->get_cube( $fact_name );
+//        $q      = new olap_query ( $this->db ) ;
+//        return $q->procedure( $cube, $args );
+//    }
+
+    /**
+     * Adds a dimension value. Gives back its ID.
+     *
+     * @param string $fact_name: First argument defines the rest
+     */
+    public function dim_add( $dim_name, $parameters )
     {
-        $cube   = $this->get_cube( $fact_name );
-        $q      = new olap_query ( $this->db ) ;
-        return $q->procedure( $cube, $args );
+        if( isset( $this->dimensions[ $dim_name ] ) )
+        {
+            $d = new olap_dimension(null, $dim_name, $this->dimensions[$dim_name]);
+            $q      = new olap_query ( $this->db ) ;
+            return $q->dim_procedure( $dim_name, $d->dim_insert_field(), (array) $parameters );
+        }
+        return FALSE;
     }
 
     /**
      * Returns the config info of a cube.
      *
-     * @param  string $fact_name
+     * @param  string $view_name
      * @return array
      */
     private function cube_info( $view_name )
@@ -146,13 +174,14 @@ class Olap
         }
         foreach( $cube_info['dimensions'] as $pos => $dimension )
         {
-            if( is_string( $dimension ) && isset( $this->preset_dimensions[ $dimension ] ) )
+            if( is_string( $dimension ) && isset( $this->dimensions[ $dimension ] ) )
             {
-                unset( $cube_info['dimensions'][ $pos ] );
-                foreach( $this->preset_dimensions[ $dimension ] as $name => $preset )
-                {
-                    $cube_info['dimensions'][ $name ] = $preset;
-                }
+                $cube_info['dimensions'][ $dimension ] = $this->dimensions[ $dimension ];
+//                unset( $cube_info['dimensions'][ $pos ] );
+//                foreach( $this->dimensions[ $dimension ] as $name => $preset )
+//                {
+//                    $cube_info['dimensions'][ $name ] = $preset;
+//                }
             }
         }
         return $cube_info;
@@ -165,7 +194,7 @@ class Olap
     public function get_cube( $view_name )
     {
         $cube_info = $this->cube_info( $view_name );
-        return new olap_cube( $cube_info, $this->preset_dimensions );
+        return new olap_cube( $cube_info, $this->dimensions );
     }
     /**
      * Main method of the library.

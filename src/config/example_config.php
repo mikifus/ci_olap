@@ -15,44 +15,54 @@ $config['cubes'] = array(
         'fact' => 'sale',
         'views' => array( 'sale_product' ),
         'measures' => array( 'price' ),
-        'dimensions' => array(
-                'shop'    => array('id_shop'),
-                'product' => array('id_product'),
-                'time'
-            )
+        'dimensions' => array( 'shop', 'product', 'time' )
     )
 );
 
 
 /*
 |--------------------------------------------------------------------------
-| Preset dimensions
+| Dimensions
 |--------------------------------------------------------------------------
 |
-| These are commonly used dimensions that you don't need to repeat
-| for each cube. Instead, you can re-use them.
 |
 */
-$config['preset_dimensions'] = array(
+$config['dimensions'] = array(
+    'shop'            => array( 'fields' => array('shop') ),
+    'product'         => array( 'fields' => array('product') ),
     'time' => array(
-        'year' => array(
+        'add_field' => 'datetime',
+        'unified_field' => 'time',
+        'time.datetime' => array(
+            'fields'    => array('datetime'),
+            'unified_field' => 'time'
+        ),
+        'time.year' => array(
             'fields'    => array('year'),
-            'unified_field' => 'time',
-            'hierarchy' => array('month')
+            'hierarchy' => array('month'),
+            'unified_field' => 'time'
         ),
-        'month' => array(
+        'time.month' => array(
             'fields'    => array('month'),
-            'unified_field' => 'time',
-            'hierarchy' => array('day')
+            'hierarchy' => array('month_day'),
+            'unified_field' => 'time'
         ),
-        'day' => array(
-            'fields'    => array('day'),
-            'unified_field' => 'time',
-            'hierarchy' => array('hour')
+        'time.month_day' => array(
+            'fields'    => array('month_day'),
+            'hierarchy' => array('hour'),
+            'unified_field' => 'time'
         ),
-        'hour' => array(
+        'time.hour' => array(
             'fields'    => array('hour'),
-            'unified_field' => 'time',
+            'unified_field' => 'time'
+        ),
+        'time.minute' => array(
+            'fields'    => array('minute'),
+            'unified_field' => 'time'
+        ),
+        'time.second' => array(
+            'fields'    => array('second'),
+            'unified_field' => 'time'
         )
     )
 );

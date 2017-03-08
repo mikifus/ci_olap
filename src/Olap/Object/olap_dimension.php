@@ -66,6 +66,20 @@ class olap_dimension extends olap_measure
         return $this->first_field( $table );
     }
     /**
+     * Fields required to add a new dimension.
+     * @param string $table
+     * @return string
+     */
+    function dim_insert_field( $table = '' )
+    {
+        $prefix = !empty($table) ? $table . '.' : '';
+        if( isset( $this->data['add_field'] ) )
+        {
+            return $prefix . $this->data['add_field'];
+        }
+        return $this->fields( $table );
+    }
+    /**
      * From the current dimension, it returns
      * all the ones under the same hierarchy.
      * Or an empty array.

@@ -14,7 +14,7 @@ class olap_cube
     private $order;
     private $current_view = '';
 
-    function __construct( $data, $preset )
+    function __construct( $data, $dimensions )
     {
         $this->fact  = $data['fact'];
         $this->views = $data['views'];
@@ -23,9 +23,9 @@ class olap_cube
         {
             $this->measures[ $measure ] = new olap_measure( $this, $name, $measure );
         }
-        foreach( $data['dimensions'] as $name => $dimension )
+        foreach( $data['dimensions'] as $dimension_name )
         {
-            $this->dimensions[ $name ] = new olap_dimension( $this, $name, $dimension );
+            $this->dimensions[ $dimension_name ] = new olap_dimension( $this, $dimension_name, $dimensions[ $dimension_name ] );
         }
 //        foreach( $preset as $dimension_prop => $dimension )
 //        {
@@ -96,6 +96,15 @@ class olap_cube
         return $this->measures[ $measure_name ];
     }
     /**
+     * Checks wether the parameter is the name of a measure.
+     * @param string $measure_name
+     * @return boolean
+     */
+    function is_measure( $measure_name )
+    {
+        return isset($this->measures[ $measure_name ]);
+    }
+    /**
      * Returns the database fields of all measures.
      * A table can be specified to use views
      * @param string $table
@@ -138,31 +147,31 @@ class olap_cube
      * @param string $table
      * @return array
      */
-    function measures_procedure_fields( $table = '' )
-    {
-        return $this->measures_fields( $table );
-    }
+//    function measures_procedure_fields( $table = '' )
+//    {
+//        return $this->measures_fields( $table );
+//    }
     /**
      * Dimensions' fields are ugly, so the procedure
      * can make it friendlier. This returns
      * the fields of the procedure.
      * @return array
      */
-    function dimensions_procedure_fields()
-    {
-        $dimensions = $this->dimensions();
-        $result = array();
-        foreach( $dimensions as $d )
-        {
-            $field = $d->insert_field();
-            if( in_array( $field, $result ) )
-            {
-                continue;
-            }
-            $result[] = $field;
-        }
-        return $result;
-    }
+//    function dimensions_procedure_fields()
+//    {
+//        $dimensions = $this->dimensions();
+//        $result = array();
+//        foreach( $dimensions as $d )
+//        {
+//            $field = $d->insert_field();
+//            if( in_array( $field, $result ) )
+//            {
+//                continue;
+//            }
+//            $result[] = $field;
+//        }
+//        return $result;
+//    }
     /**
      * Returns the order parameters of the cube
      * @return array
@@ -186,8 +195,8 @@ class olap_cube
      * @param string $table
      * @return array
      */
-    function get_procedure_fields( $table = '' )
-    {
-        return array_merge($this->measures_procedure_fields( $table ), $this->dimensions_procedure_fields( $table ) );
-    }
+//    function get_procedure_fields( $table = '' )
+//    {
+//        return array_merge($this->measures_procedure_fields( $table ), $this->dimensions_procedure_fields( $table ) );
+//    }
 }
