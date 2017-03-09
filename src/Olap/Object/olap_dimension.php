@@ -75,7 +75,11 @@ class olap_dimension extends olap_measure
         $prefix = !empty($table) ? $table . '.' : '';
         if( isset( $this->data['add_field'] ) )
         {
-            return $prefix . $this->data['add_field'];
+            $fields = array();
+            foreach($this->data['add_field'] as $fld) {
+                $fields[] = $prefix . $fld;
+            }
+            return $fields;
         }
         return $this->fields( $table );
     }

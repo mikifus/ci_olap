@@ -604,7 +604,7 @@ class olap_query
     {
         if( count($fields) != count($arguments) )
         {
-            throw new \Exception("Olap: Data compilation failed for dimension (wrong parameters: ".count($fields)." required, ". count($arguments) ." provided).");
+            throw new \Exception("Olap: Data compilation failed for dimension ".$dimension." (wrong parameters: ".count($fields)." required, ". count($arguments) ." provided).");
         }
         $t_dim = $this->prefix_dimension.$dimension;
         $procedure = $this->make_procedure( $t_dim, count($fields) );
